@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MARIO BROTHER – Petualangan Matematika</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#1b2a6b;--ink:#fff;--card:#fff;--cardink:#222;--red:#e52521;--gold:#fbd000}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS",Verdana,sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%;max-width:980px;margin:auto}
+#hud{display:flex;flex-wrap:wrap;gap:6px;padding:6px;font-weight:bold;font-size:clamp(11px,2.4vw,15px);align-items:center;justify-content:center}
+#hud span.p{background:#0006;padding:3px 8px;border-radius:12px}
+#bar{width:100%;height:8px;background:#0005;border-radius:6px;overflow:hidden}#bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .4s}
+#stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+canvas{width:100%;max-height:100%;aspect-ratio:16/9;background:#5c94fc;border:3px solid #000;border-radius:8px;image-rendering:pixelated}
+.ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;padding:10px;z-index:5}
+.ov.on{display:flex}
+.box{background:var(--card);color:var(--cardink);border-radius:18px;padding:16px 20px;max-width:560px;width:100%;text-align:center;border:4px solid var(--red);max-height:100%;overflow:auto}
+.box h1{margin:0 0 6px;color:var(--red);font-size:clamp(20px,5vw,34px)}
+.box p,.box li{font-size:clamp(13px,2.6vw,16px)}.box ul{text-align:left}
+button{font-family:inherit;font-weight:bold;cursor:pointer;border:0;border-radius:12px;background:var(--red);color:#fff;padding:10px 20px;font-size:clamp(14px,3vw,18px);box-shadow:0 4px #8b100e}
+button:active{transform:translateY(3px);box-shadow:0 1px #8b100e}
+.q{font-weight:bold;margin:6px 0;line-height:1.3}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.opts button{font-size:clamp(13px,3vw,17px);background:#1e6fd9;box-shadow:0 4px #0f3f83;color:#fff}.opts button:disabled{background:#999;box-shadow:none;opacity:.6}
+#fb{min-height:24px;font-weight:bold;margin-top:8px}
+#ctl{display:flex;justify-content:space-between;padding:6px 10px;gap:10px}
+#ctl button{width:clamp(56px,16vw,84px);height:clamp(48px,12vw,64px);font-size:24px;background:#0008;box-shadow:none;border:2px solid #fff6}
+.mini{padding:4px 10px;font-size:14px;box-shadow:none;background:#0007}
+#vol{width:70px}
+</style></head><body>
+<div id="app">
+<div id="hud">
+<span class="p">⭐ <b id="sc">0</b></span><span class="p">🪙 <b id="co">0</b></span><span class="p">Level <b id="lv">1</b>/11</span><span class="p">Soal <b id="qn">1</b>/33</span><span class="p">✔ Benar <b id="ok">0</b></span>
+<button class="mini" id="bp">⏸</button><button class="mini" id="bm">🎵</button><input type="range" id="vol" min="0" max="1" step="0.05" value="0.6" aria-label="Volume">
+<div id="bar"><i id="pg"></i></div></div>
+<div id="stage"><canvas id="c" width="800" height="450"></canvas>
+<div class="ov on" id="o-title"><div class="box"><h1>MARIO BROTHER</h1><p><b>Petualangan Matematika</b><br>Sumatif Harian Matematika · Fase B / Kelas IV SD</p><p style="font-size:44px;margin:4px">🍄 🪙 ⭐</p><button data-a="help">MULAI</button></div></div>
+<div class="ov" id="o-help"><div class="box"><h1>Petunjuk</h1><ul><li>← → : Mario berjalan. Spasi / ↑ : melompat. P : jeda.</li><li>Di HP/tablet pakai tombol layar di bawah.</li><li>Kumpulkan koin 🪙 dan jamur 🍄. Injak Goomba dari atas, jangan ditabrak!</li><li>Di setiap gerbang, jawab soal perkalian dengan benar agar gerbang terbuka.</li><li>Ada 11 level, tiap level 3 soal. Total 33 soal.</li></ul><button data-a="play">MAIN!</button></div></div>
+<div class="ov" id="o-q"><div class="box"><div id="qh" style="font-weight:bold"></div><div class="q" id="qt"></div><div class="opts" id="op"></div><div id="fb"></div></div></div>
+<div class="ov" id="o-pause"><div class="box"><h1>Jeda</h1><button data-a="resume">LANJUTKAN</button></div></div>
+<div class="ov" id="o-lvl"><div class="box"><h1>🎉 Level Selesai!</h1><p id="lvt"></p><button data-a="next">LEVEL BERIKUTNYA</button></div></div>
+<div class="ov" id="o-end"><div class="box"><h1>🏆 Kemenangan!</h1><p>Kamu menyelesaikan semua 33 soal!</p><p style="font-size:18px">Skor: <b id="rs"></b><br>Koin: <b id="rc"></b><br>Benar pada percobaan pertama: <b id="rk"></b> / 33</p><p id="rm"></p><button data-a="again">MAIN LAGI</button></div></div>
+</div>
+<div id="ctl"><button id="bl">◀</button><button id="bj">⤒ LONCAT</button><button id="br">▶</button></div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),cv=$('c'),x=cv.getContext('2d'),W=800,H=450,G=380;
+// ---------- AUDIO (Web Audio, original) ----------
+let AC,master,mus,musicOn=true,vol=.6;
+function initA(){if(AC){if(AC.state==='suspended')AC.resume();return}
+ try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=vol;master.connect(AC.destination);mus=AC.createGain();mus.gain.value=.35;mus.connect(master);}catch(e){}}
+function tone(f,d,t='square',v=.25,sl=0,dl=0,dest){if(!AC)return;try{const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+dl;o.type=t;o.frequency.setValueAtTime(f,s);if(sl)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+sl),s+d);g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.connect(g);g.connect(dest||master);o.start(s);o.stop(s+d+.02);}catch(e){}}
+const N=n=>261.63*Math.pow(2,n/12);
+let lastS={};
+function sfx(k){if(!AC)return;const n=performance.now();if(lastS[k]&&n-lastS[k]<70)return;lastS[k]=n;
+ if(k==='jump')tone(300,.18,'square',.2,500);
+ else if(k==='coin'){tone(988,.08,'square',.18);tone(1319,.25,'square',.18,0,.07)}
+ else if(k==='mush'){[0,4,7,12,16].forEach((s,i)=>tone(N(s+12),.1,'triangle',.25,0,i*.07))}
+ else if(k==='ok'){[0,4,7,12].forEach((s,i)=>tone(N(s+12),.14,'square',.2,0,i*.09))}
+ else if(k==='bad'){tone(220,.25,'sawtooth',.22,-120);tone(150,.3,'sawtooth',.22,-80,.2)}
+ else if(k==='hit'){tone(200,.3,'sawtooth',.25,-150)}
+ else if(k==='stomp')tone(180,.12,'square',.25,200);
+ else if(k==='lvl'){[0,4,7,12,7,12,16,19].forEach((s,i)=>tone(N(s+12),.15,'square',.2,0,i*.1))}
+ else if(k==='win'){[0,0,0,0,5,7,12,7,12,16,19,24].forEach((s,i)=>tone(N(s+12),.2,'square',.2,0,i*.13))}
+ else if(k==='click')tone(660,.06,'triangle',.25);}
+const mel=[0,4,7,12,7,4,7,null,5,9,12,17,12,9,12,null,7,11,14,19,14,11,7,null,12,7,4,7,0,null,null,null],bass=[-12,-7,-5,-7];
+let st=0;setInterval(()=>{if(!AC||!musicOn||(state!=='play'&&state!=='q'))return;const m=mel[st%32];if(m!==null)tone(N(m),.14,'square',.5,0,0,mus);if(st%8===0)tone(N(bass[(st/8|0)%4]),.5,'triangle',.7,0,0,mus);st++},160);
+// ---------- QUESTIONS (40) ----------
+const R=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const BANK=[
+["Lambang bilangan dari \"enam ribu tujuh ratus lima puluh\" adalah ....",["6.075","6.570","6.750","7.650"],2],
+["Pada bilangan 8.742, angka 7 menempati nilai tempat ....",["ribuan","ratusan","puluhan","satuan"],1],
+["Bilangan 5.409 dibaca ....",["lima ribu empat ratus sembilan","lima ribu empat ratus sembilan puluh","lima ribu empat puluh sembilan","lima ribu empat ratus sembilan belas"],0],
+["Tanda perbandingan yang tepat untuk mengisi titik-titik pada 4.825 ... 4.852 adalah ....",[">","<","=","≥"],1],
+["Urutan bilangan 3.450, 3.250, 3.650, 3.150 dari yang terkecil ke terbesar adalah ....",["3.650, 3.450, 3.250, 3.150","3.150, 3.450, 3.250, 3.650","3.150, 3.250, 3.450, 3.650","3.250, 3.150, 3.450, 3.650"],2],
+["Harga susu di Toko A adalah Rp5.000, di Toko B Rp6.750, dan di Toko C Rp5.500. Toko yang menjual susu dengan harga paling murah adalah ....",["Toko B","Toko C","Toko A","Toko B dan C"],2],
+["Hasil pengurangan bersusun dari 573 – 268 adalah ....",["305","315","205","308"],0],
+["SD Jaya Terus mengirimkan 256 siswa untuk mengikuti lomba matematika. Jika 179 siswa di antaranya adalah siswa laki-laki, maka banyaknya siswa perempuan adalah ....",["67 siswa","77 siswa","87 siswa","97 siswa"],1],
+["Slamet memiliki 111 kelereng, lalu mendapat hadiah 36 kelereng dari kakaknya. Slamet kemudian memberikan 54 kelereng kepada Asep. Banyaknya kelereng Slamet sekarang adalah ....",["83 kelereng","93 kelereng","103 kelereng","147 kelereng"],1],
+["Hasil dari perkalian 32 × 3 adalah ....",["86","96","98","106"],1],
+["Terdapat 24 botol air mineral dalam satu karton. Banyaknya botol air mineral dalam 8 karton adalah ....",["162 botol","182 botol","192 botol","202 botol"],2],
+["Hasil perkalian 45 × 5 adalah ....",["205","215","225","235"],2],
+["Hasil dari 72 : 3 adalah ....",["22","24","26","28"],1],
+["Pak Guru membeli 3 pak permen yang masing-masing berisi 30 permen. Jika permen tersebut dibagikan sama rata kepada 5 siswa, banyaknya permen yang diterima setiap siswa adalah ....",["12 permen","15 permen","18 permen","20 permen"],2],
+["Hasil dari pembagian 70 : 5 adalah ....",["12","14","15","16"],1],
+["Faktor dari bilangan 27 adalah ....",["1, 3, 9, 27","1, 3, 6, 27","1, 2, 9, 27","3, 9, 27"],0],
+["Kelipatan dari 3 yang nilainya kurang dari 30 adalah ....",["3, 6, 9, 12, 15, 18, 21, 24, 27","3, 6, 9, 12, 15, 18, 21, 24, 27, 30","6, 12, 18, 24","3, 9, 15, 21, 27"],0],
+["Kelipatan dari 4 yang lebih dari 7 dan kurang dari 25 adalah ....",["4, 8, 12, 16, 20, 24","8, 12, 16, 20, 24","8, 12, 16, 20","12, 16, 20, 24"],1],
+["Perbandingan yang tepat untuk mengisi titik-titik pada ½ ... ¼ adalah ....",["<",">","=","≤"],1],
+["Perbandingan antara pecahan ²/₁₀ dan ¹/₁₀ adalah ....",["²/₁₀ < ¹/₁₀","²/₁₀ > ¹/₁₀","²/₁₀ = ¹/₁₀","²/₁₀ ≤ ¹/₁₀"],1],
+["Urutan pecahan ⅛, ⅝, ⅜ dari yang terkecil ke terbesar adalah ....",["⅝, ⅜, ⅛","⅛, ⅜, ⅝","⅜, ⅛, ⅝","⅛, ⅝, ⅜"],1],
+["Pecahan yang senilai dengan ½ adalah ....",["⅔","²/₄","⅗","⁴/₆"],1],
+["Bentuk paling sederhana dari pecahan ⁶/₁₂ adalah ....",["½","⅓","⅔","¾"],0],
+["Jika pecahan ¾ diubah menjadi pecahan senilai berpenyebut 12, maka pembilangnya menjadi ....",["6","8","9","10"],2],
+["Bentuk desimal dari pecahan ³/₁₀ adalah ....",["0,03","0,3","3,0","0,33"],1],
+["Bentuk pecahan persepuluhan dari desimal 0,7 adalah ....",["⁷/₁₀₀","⁷/₁₀","¹/₇","⁷⁰/₁₀"],1],
+["Bentuk desimal dari pecahan ²⁵/₁₀₀ adalah ....",["0,25","2,5","0,025","25,0"],0],
+["Bentuk persen dari pecahan ⁴⁵/₁₀₀ adalah ....",["4,5%","45%","450%","0,45%"],1],
+["Nazilla dapat menjawab dengan benar 6 pertanyaan dari 10 soal yang diberikan. Persentase soal yang dijawab benar oleh Nazilla adalah ....",["50%","60%","70%","80%"],1],
+["Bentuk pecahan perseratusan dari 75% adalah ....",["⁷⁵/₁₀","⁷⁵/₁₀₀","⁷,⁵/₁₀₀","⁷⁵⁰/₁₀₀"],1],
+["Perhatikan pola bilangan membesar berikut: 5, 9, 13, 17, ... Bilangan berikutnya yang tepat untuk melengkapi pola tersebut adalah ....",["19","20","21","22"],2],
+["Perhatikan pola bilangan mengecil berikut: 34, 27, 20, 13, ... Bilangan berikutnya untuk melengkapi pola tersebut adalah ....",["6","7","8","9"],0],
+["Ali menata buku pada rak perpustakaan. Pada rak pertama ia menata 5 buku, rak kedua 9 buku, dan rak ketiga 13 buku. Banyaknya buku yang ditata Ali pada rak kelima sesuai pola tersebut adalah ....",["17 buku","19 buku","21 buku","23 buku"],2]];
+function makeQ(){return BANK.map(([t,o,k])=>({t,ans:o[k],o:R(o.slice())}))}
+// ---------- STATE ----------
+let state='title',Q,qi,score,coins,right,lv,solids,cn,en,ms,gates,P,keys={},cam=0,parts=[],t=0,tries,flagX,doneL,hurt=0,big=0;
+const L='ABCD';
+function newGame(){Q=makeQ();qi=0;score=0;coins=0;right=0;lv=1;tries=0;genLevel();hud()}
+function genLevel(){solids=[];cn=[];en=[];ms=[];gates=[];doneL=false;
+ for(let i=0;i<3;i++){const gx=700+i*750;gates.push({x:gx,open:false});solids.push({x:gx,y:G-230,w:34,h:230,gate:i});
+  const bx=gx-560;solids.push({x:bx,y:G-110,w:34,h:34,brick:1},{x:bx+34,y:G-110,w:34,h:34,brick:1},{x:bx+68,y:G-110,w:34,h:34,brick:1});
+  for(let k=0;k<3;k++)cn.push({x:bx+10+k*34,y:G-150,got:0});
+  const ph=60+(i%2)*30;solids.push({x:gx-340,y:G-ph,w:56,h:ph,pipe:1});cn.push({x:gx-322,y:G-ph-60,got:0},{x:gx-300,y:G-ph-80,got:0});
+  en.push({x:gx-230,x0:gx-300,x1:gx-120,d:-1,y:G-28,w:28,h:28,al:1,sp:.7+lv*.1});
+  if(lv>1||i>1)en.push({x:gx-480,x0:gx-520,x1:gx-420,d:1,y:G-28,w:28,h:28,al:1,sp:.8+lv*.1});
+  for(let k=0;k<4;k++)cn.push({x:gx-200+k*30,y:G-30,got:0});
+  if(i%2===1)ms.push({x:gx-150,y:G-28,got:0});}
+ flagX=700+2*750+700;P={x:80,y:G-40,w:26,h:38,vx:0,vy:0,g:true,f:1};cam=0;
+ solids.push({x:-40,y:0,w:40,h:H});$('lvt').textContent='Hebat! Kamu menyelesaikan level '+lv+' dari 11.'}
+function hud(){$('sc').textContent=score;$('co').textContent=coins;$('lv').textContent=lv;$('qn').textContent=Math.min(qi+1,33);$('ok').textContent=right;$('pg').style.width=(qi/33*100)+'%'}
+function show(id){document.querySelectorAll('.ov').forEach(o=>o.classList.remove('on'));if(id)$(id).classList.add('on')}
+function ask(){state='q';tries=0;const q=Q[qi];$('qh').textContent='Soal '+(qi+1)+' dari 33 · Level '+lv;$('qt').textContent=q.t;$('qt').style.fontSize='clamp(15px,3.6vw,21px)';$('fb').textContent='';$('fb').style.color='';
+ const op=$('op');op.innerHTML='';q.o.forEach((v,i)=>{const b=document.createElement('button');b.textContent=L[i]+'. '+v;b.onclick=()=>answer(b,v);op.appendChild(b)});show('o-q')}
+function answer(b,v){initA();const q=Q[qi];
+ if(v===q.ans){sfx('ok');const g=gates[qi%3];g.open=true;solids=solids.filter(s=>s.gate!==qi%3);if(tries===0)right++;score+=tries===0?100:50;coins+=3;score+=30;
+  burst(g.x,G-120,'star',30);qi++;hud();state='play';show(null);if(qi%3===0)doneL=true;
+  if(qi>=33){setTimeout(()=>finish(),900)}}
+ else{tries++;sfx('bad');b.disabled=true;$('fb').style.color='#c00';$('fb').textContent='Belum tepat. Baca soal sekali lagi, lalu pilih jawaban yang lain ya!'}}
+function finish(){state='end';sfx('win');$('rs').textContent=score;$('rc').textContent=coins;$('rk').textContent=right;$('rm').textContent=right>=30?'Luar biasa, kamu jagoan perkalian! 🌟':right>=23?'Bagus sekali! Terus berlatih ya!':'Ayo coba lagi supaya lebih hebat!';show('o-end')}
+function burst(px,py,k,n){for(let i=0;i<n;i++)parts.push({x:px,y:py,vx:(Math.random()-.5)*8,vy:-Math.random()*8,l:40,k})}
+// ---------- UPDATE ----------
+const ov=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+function update(){t++;if(hurt>0)hurt--;if(big>0)big--;
+ const l=keys.l,r=keys.r,j=keys.j;
+ if(l)P.vx=Math.max(P.vx-.6,-4.2),P.f=-1;else if(r)P.vx=Math.min(P.vx+.6,4.2),P.f=1;else P.vx*=.78;
+ if(Math.abs(P.vx)<.05)P.vx=0;
+ if(j&&P.g){P.vy=-11.5;P.g=false;sfx('jump')}
+ if(!j&&P.vy<-4)P.vy=-4;
+ P.vy=Math.min(P.vy+.55,12);
+ P.x+=P.vx;for(const s of solids)if(ov(P,s)){if(P.vx>0)P.x=s.x-P.w;else if(P.vx<0)P.x=s.x+s.w;P.vx=0}
+ P.y+=P.vy;P.g=false;for(const s of solids)if(ov(P,s)){if(P.vy>0){P.y=s.y-P.h;P.g=true}else if(P.vy<0)P.y=s.y+s.h;P.vy=0}
+ if(P.y+P.h>=G){P.y=G-P.h;P.vy=0;P.g=true}
+ const gi=gates.findIndex(g=>!g.open);if(gi>=0&&P.x>gates[gi].x-110&&gi===qi%3){P.vx=0;ask();return}
+ for(const c of cn)if(!c.got&&ov(P,{x:c.x-8,y:c.y-8,w:16,h:16})){c.got=1;coins++;score+=10;sfx('coin');burst(c.x,c.y,'sp',6);hud()}
+ for(const m of ms)if(!m.got&&ov(P,{x:m.x,y:m.y,w:28,h:28})){m.got=1;score+=100;big=300;sfx('mush');burst(m.x,m.y,'sp',12);hud()}
+ for(const e of en){if(!e.al)continue;e.x+=e.d*e.sp;if(e.x<e.x0||e.x>e.x1)e.d*=-1;
+  if(ov(P,e)){if(P.vy>1&&P.y+P.h-e.y<20){e.al=0;P.vy=-8;score+=50;sfx('stomp');burst(e.x,e.y,'sp',8);hud()}
+   else if(!hurt){hurt=90;sfx('hit');score=Math.max(0,score-20);P.vx=-P.f*6;P.vy=-6;hud()}}}
+ if(doneL&&P.x>flagX){doneL=false;sfx('lvl');lv++;if(lv>11){finish()}else{state='lvl';show('o-lvl')}}
+ cam=Math.max(0,Math.min(P.x-300,flagX+200-W));
+ parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.l--});parts=parts.filter(p=>p.l>0)}
+// ---------- DRAW ----------
+function rect(c,a,b,w,h){x.fillStyle=c;x.fillRect(Math.round(a),Math.round(b),w,h)}
+function draw(){const hue=[0,20,260,300,190,330,40,210][(lv-1)%8];
+ x.fillStyle=lv%2?'#5c94fc':'#7ab8ff';x.fillRect(0,0,W,H);
+ if(lv>3){x.fillStyle='#0003';x.fillRect(0,0,W,H)}
+ for(let i=0;i<8;i++){const cx=((i*260-cam*.25)%2080+2080)%2080-120,cy=50+(i%3)*40;x.fillStyle='#fff';x.beginPath();x.arc(cx,cy,22,0,7);x.arc(cx+24,cy+4,26,0,7);x.arc(cx+50,cy,20,0,7);x.fill()}
+ for(let i=0;i<8;i++){const hx=((i*300-cam*.5)%2400+2400)%2400-200;x.fillStyle=`hsl(${110+hue/6},50%,45%)`;x.beginPath();x.moveTo(hx,G);x.quadraticCurveTo(hx+90,G-170,hx+180,G);x.fill()}
+ x.save();x.translate(-Math.round(cam),0);
+ rect('#c84c0c',cam-10,G,W+20,H-G);rect('#4cb81c',cam-10,G,W+20,12);
+ for(let i=Math.floor(cam/40);i<cam/40+22;i++)rect('#a03a08',i*40,G+30,2,H);
+ for(const s of solids){if(s.gate!==undefined){rect('#555',s.x,s.y,s.w,s.h);for(let k=0;k<s.h;k+=20)rect('#888',s.x+4,s.y+k+4,26,12);x.fillStyle='#fff';x.font='bold 16px sans-serif';x.fillText('?',s.x+12,s.y+s.h/2)}
+  else if(s.brick){rect('#c84c0c',s.x,s.y,s.w,s.h);rect('#000',s.x,s.y+16,s.w,2);rect('#000',s.x+16,s.y,2,16);rect('#000',s.x+8,s.y+18,2,16)}
+  else if(s.pipe){rect('#0a9a1a',s.x,s.y,s.w,s.h);rect('#2fd050',s.x-4,s.y,s.w+8,16);rect('#065',s.x+s.w-10,s.y+16,6,s.h)}}
+ for(const g of gates)if(g.open){x.fillStyle='#0004';x.fillRect(g.x,G-12,34,2)}
+ rect('#fff',flagX,G-220,4,220);x.fillStyle=doneL?'#2ecc40':'#e52521';x.beginPath();x.moveTo(flagX+4,G-220);x.lineTo(flagX+54,G-195);x.lineTo(flagX+4,G-170);x.fill();
+ for(const c of cn)if(!c.got){const w=Math.abs(Math.cos(t/10+c.x))*7+1;x.fillStyle='#fbd000';x.beginPath();x.ellipse(c.x,c.y,w,9,0,0,7);x.fill();x.strokeStyle='#b8860b';x.stroke()}
+ for(const m of ms)if(!m.got){rect('#f8e0b0',m.x+6,m.y+14,16,14);x.fillStyle='#e52521';x.beginPath();x.arc(m.x+14,m.y+14,14,Math.PI,0);x.fill();rect('#fff',m.x+6,m.y+6,6,6)}
+ for(const e of en)if(e.al){const f=Math.sin(t/6)*3;x.fillStyle='#8b4513';x.beginPath();x.arc(e.x+14,e.y+12,14,Math.PI,0);x.fill();rect('#8b4513',e.x+2,e.y+12,24,8);rect('#f8d8a8',e.x+4,e.y+18,20,6);rect('#000',e.x+4+f/2,e.y+24,8,4);rect('#000',e.x+16-f/2,e.y+24,8,4);rect('#fff',e.x+7,e.y+8,5,6);rect('#fff',e.x+16,e.y+8,5,6);rect('#000',e.x+9,e.y+11,2,3);rect('#000',e.x+18,e.y+11,2,3)}
+ mario();
+ for(const p of parts){if(p.k==='star'){x.fillStyle=p.l%6<3?'#fbd000':'#fff';x.fillRect(p.x,p.y,7,7)}else{x.fillStyle='#fff6a0';x.fillRect(p.x,p.y,4,4)}}
+ x.restore()}
+function mario(){if(hurt&&hurt%8<4)return;const s=big?1.25:1,px=P.x,py=P.y+P.h,ph=P.h*s;x.save();x.translate(px+P.w/2,py);x.scale(P.f*s,s);const wk=P.g&&Math.abs(P.vx)>.5?Math.sin(t/3)*4:0,jmp=!P.g;
+ rect('#5c2e0a',-10+wk,-8,10,8);rect('#5c2e0a',2-wk,-8,10,8);rect('#2040d0',-9,-22,18,14);rect('#e52521',-11,-34,22,12);rect('#2040d0',-9,-30,4,10);rect('#2040d0',5,-30,4,10);
+ rect('#fbd000',-6,-26,3,3);rect('#fbd000',3,-26,3,3);
+ rect('#e52521',jmp?-15:-14,jmp?-40:-30,5,12);rect('#f8c090',-7,-46,14,12);rect('#e52521',-9,-52,18,8);rect('#e52521',2,-46,12,4);rect('#000',3,-42,2,4);rect('#5c2e0a',-1,-36,9,2);x.restore()}
+// ---------- LOOP ----------
+let last=0,acc=0;function loop(ts){requestAnimationFrame(loop);const d=Math.min(100,ts-last);last=ts;acc+=d;while(acc>16.7){acc-=16.7;if(state==='play')update()}
+ if(Q||state==='title'||state==='help'){if(!Q)newGame();draw()}}
+// ---------- INPUT ----------
+const km={ArrowLeft:'l',ArrowRight:'r',ArrowUp:'j',' ':'j'};
+addEventListener('keydown',e=>{if(km[e.key]){keys[km[e.key]]=true;e.preventDefault()}if((e.key==='p'||e.key==='P')&&(state==='play'||state==='pause'))pause()});
+addEventListener('keyup',e=>{if(km[e.key])keys[km[e.key]]=false});
+[['bl','l'],['br','r'],['bj','j']].forEach(([id,k])=>{const b=$(id);const on=e=>{e.preventDefault();initA();keys[k]=true},off=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,off))});
+function pause(){if(state==='play'){state='pause';show('o-pause')}else if(state==='pause'){state='play';show(null)}}
+$('bp').onclick=()=>{initA();sfx('click');pause()};
+$('bm').onclick=()=>{initA();musicOn=!musicOn;$('bm').textContent=musicOn?'🎵':'🔇';sfx('click')};
+$('vol').oninput=e=>{vol=+e.target.value;if(master)master.gain.value=vol};
+document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{initA();sfx('click');const a=b.dataset.a;
+ if(a==='help'){state='help';show('o-help')}
+ else if(a==='play'){newGame();state='play';show(null)}
+ else if(a==='resume')pause();
+ else if(a==='next'){genLevel();hud();state='play';show(null)}
+ else if(a==='again'){newGame();state='play';show(null)}});
+requestAnimationFrame(loop);
+})();
+</script></body></html>
